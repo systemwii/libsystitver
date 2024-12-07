@@ -31,7 +31,7 @@ int hashToSid(u8* hash) {
 }
 
 void STV_FreeShared1() {
-    free(shared1Map); shared1Map = NULL;
+    memFree((void**)&shared1Map);
 }
 
 int STV_VerifyShared1(u32 mask[4], bool log) {        

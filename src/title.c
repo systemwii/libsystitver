@@ -10,8 +10,8 @@ static u8 tmdHash[20];              // hash of this TMD
 static u8 cmdHash[20];              // hash of this TMD's concatenated content metadata
 
 void STV_FreeTitle() {
-    free(content);  content = NULL;
-    free(tmdRaw);   tmdRaw = NULL;
+    memFree((void**)&content);
+    memFree((void**)&tmdRaw);
 }
 
 int STV_LoadTitle(u32 title, bool log) {

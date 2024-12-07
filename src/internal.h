@@ -23,12 +23,12 @@
 // -10xx    errors returned by IOS ES module (https://www.wiibrew.org/wiki//dev/es)
 // other?   check -10xx (ES errors) first
 
-#define CEILING32(x)        ((x+31)&(~31))  // round up to multiple of 32 (for memalign call)
 #define SHA1PRINTF(hash)    (printf(" %08x%08x%08x%08x%08x", ((u32*)hash)[0], ((u32*)hash)[1], ((u32*)hash)[2], ((u32*)hash)[3], ((u32*)hash)[4]))
 
 typedef struct { char id[8]; u8 hash[20]; } __attribute__((packed)) shared1Content;     // content.map is just an array of these
 
 // documentation in source files
+void memFree(void** handle);
 int initNand(void);                                 // returns 0 or error
 int allocReadFile(char* filepath, u8** dataPtr);    // returns + filesize or - error
 int parseTmd(u64 tid, signed_blob** tmdPtr);        // returns + filesize or - error

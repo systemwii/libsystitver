@@ -39,9 +39,12 @@ void testCaching(bool log) {
 void testTitle(int id, bool log) {
 	ret = STV_LoadTitle(id, log);
 	if (ret != 0) {errStr = "(STV_LoadTitle)"; fail(); return;}
+	//if (id >= 10 && id <= 19) { STV_FreeShared1(); }
+	//if (id == 41) { STV_FreeTitle(); }
 
 	ret = STV_VerifyCurrentTitle(log);
 	if (ret != 0) {errStr = "(STV_VerifyCurrentTitle)"; fail(); return;}
+	//if (id >= 50 && id <= 59) { STV_FreeTitle(); }
 
 	SysTitTag stt = STV_IdentifyCurrentTitle(log);
 	if (log && stt.type == 0) {printf("> %s\n", stt.name);}
@@ -67,10 +70,11 @@ int main(int argc, char* argv[]) {
 	printf("henlo\n\n");
 	bool log = true;
 	timer();
+
 	// testCaching(log);			printf("cache test\n"); sleep(2);
 	testAllExceptSystemMenu(log);	printf("\nioses done in %d\n", timer());
 	testTitle(2, log);				printf("\nsystem menu done in %d\n", timer());
-	
+
 	sleep(15); return 0;
 }
 
