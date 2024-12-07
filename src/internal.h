@@ -13,6 +13,7 @@
 #define ERROR_UNIQUECONTENTNOTFOUND -34     // verification failed: a unique content file was missing
 #define ERROR_SHAREDCONTENTNOTFOUND -35     // verification failed: a shared content file was missing
 #define ERROR_CONTENTMAPCORRUPTED   -36     // verification failed: failed to parse shared content ID from shared content map
+#define ERROR_TMDCORRUPTED          -37     // verification failed: failed to parse content hashes from TMD
 // -4xx     verification failed on the unique content file with ID xx
 // -5xx     verification failed on the shared content file with ID xx
 // external errors

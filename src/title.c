@@ -3,27 +3,32 @@
 #include "identify.h"
 
 extern u8* content;
-static u32 titleIdLower;            // currently loaded title
-static signed_blob* tmdRaw = NULL;  // TMD of this title
-static u8 tmdHash[20];              // hash of this TMD
+static signed_blob* tmdRaw = NULL;  // currently loaded title TMD
+static u32 titleIdLower;            // ID of this title
 static s32 contentCount;            // number of content files of this title
+static u8 tmdHash[20];              // hash of this TMD
+static u8 cmdHash[20];              // hash of this TMD's concatenated content metadata
 
 void STV_FreeTitle() {
     free(content);  content = NULL;
     free(tmdRaw);   tmdRaw = NULL;
 }
 
-// todo: this trusts the tmd data too much;
-// should probably rewrite with bounds and data checks
 int STV_LoadTitle(u32 title, bool log) {
+    // load tmd
     int filesize = parseTmd(0x0000000100000000ULL | title, &tmdRaw);
     if (filesize == -106)  { return ERROR_TITLENOTFOUND; }
     else if (filesize < 0) { return filesize; }
-
-    titleIdLower = title;
+    // parse tmd
     tmd* tmdParsed = (tmd*)SIGNATURE_PAYLOAD(tmdRaw);
+    if (0x1e4 + tmdParsed->num_contents*sizeof(tmd_content) > filesize) {
+        STV_FreeTitle(); return ERROR_TMDCORRUPTED;
+    }
+    // success: update tmd state variables
+    titleIdLower = title;
     contentCount = tmdParsed->num_contents;
     SHA1((u8*)tmdRaw, filesize, tmdHash);
+    SHA1((u8*)(tmdParsed->contents), contentCount*sizeof(tmd_content), cmdHash);
 	if (log) {
         printf(CON_YELLOW("\nslot %3d | #%2d |"), titleIdLower, contentCount);
         SHA1PRINTF(tmdHash); printf("\n");
@@ -37,7 +42,7 @@ int STV_VerifyCurrentTitle(bool log) {
     static char filepath[48];
     u32 shared1Mask[4] = {};
     tmd* tmdParsed = (tmd*)SIGNATURE_PAYLOAD(tmdRaw);
-    if (log) {printf("- unique cnt:");}
+    if (log) {printf("- unq cnt:");}
 
     for (int i=0; i<contentCount; i++) {
         u32 cid = tmdParsed->contents[i].cid;
@@ -46,7 +51,10 @@ int STV_VerifyCurrentTitle(bool log) {
             if (sid >= 0 && sid <= 127) {
                 shared1Mask[sid/32] |= 1 << (sid%32);
             } else {
-                if (log) {printf(CON_MAGENTA("missing shared content:")); SHA1PRINTF(tmdParsed->contents[i].hash); printf("\n");}
+                if (log) {
+                    printf(CON_MAGENTA("missing shared content:"));
+                    SHA1PRINTF(tmdParsed->contents[i].hash); printf("\n");
+                }
                 return ERROR_SHAREDCONTENTNOTFOUND;
             }
         } else {    // unique content file
@@ -78,50 +86,30 @@ int STV_VerifyCurrentTitle(bool log) {
 
 // title identification heuristics
 
-SysTitTag STV_IdentifyCurrentTitleByHash(bool log) {
+SysTitTag STV_IdentifyCurrentTitle(bool log) {
+    // by tmd hash
     static int cachedCounter;   // optimisation: loop starting from where we left off last time
     for (int i=0; i<sizeof(tmdHashDict)/sizeof(SysTitTag); i++) {
         int j = (i + cachedCounter) % (sizeof(tmdHashDict)/sizeof(SysTitTag));
-        if (memcmp(tmdHash, tmdHashDict[j].tmdHash, 20) == 0) {
+        if (memcmp(tmdHash, tmdHashDict[j].hash, 20) == 0) {
             if (log) {
-                printf(CON_CYAN("> identified by tmd hash: IOS%d v%d | %s\n"),
-                    tmdHashDict[j].titleID, tmdHashDict[j].rev, tmdHashDict[j].family);
+                printf(CON_CYAN("> identified: IOS%d v%d | %s | [by tmd hash]\n"),
+                    tmdHashDict[j].titleID, tmdHashDict[j].rev, tmdHashDict[j].name);
             }
             cachedCounter = j+1;
             return tmdHashDict[j];
         }
     }
-    return (SysTitTag){-1, 0,"","",{}};
-}
-
-SysTitTag STV_IdentifyMIOSBySize(bool log) {
-    if (titleIdLower != 257) {
-        int ret = STV_LoadTitle(257, log);
-        if (ret != 0) { return (SysTitTag){ret, 0,"","",{}}; }
+    // by cmd hash
+    for (int i=0; i<sizeof(cmdHashDict)/sizeof(SysTitTag); i++) {
+        if (memcmp(cmdHash, cmdHashDict[i].hash, 20) == 0) {
+            if (log) {
+                printf(CON_CYAN("> identified: IOS%d v%d | %s | [by cmd hash]\n"),
+                    cmdHashDict[i].titleID, cmdHashDict[i].rev, cmdHashDict[i].name);
+            }
+            return cmdHashDict[i];
+        }
     }
-
-    tmd* tmdParsed = (tmd*)SIGNATURE_PAYLOAD(tmdRaw);
-    if (tmdParsed->num_contents < 2) { return (SysTitTag){ERROR_UNIQUECONTENTNOTFOUND, 0,"","",{}}; }
-
-    static char filepath[48];
-    snprintf(filepath, sizeof(filepath), "/title/00000001/%08x/content/%08x.app", titleIdLower, tmdParsed->contents[1].cid);
-    int filesize = allocReadFile(filepath, &content);
-    if (filesize == -106)   { return (SysTitTag){ERROR_UNIQUECONTENTNOTFOUND, 0,"","",{}}; }
-    else if (filesize < 16) { return (SysTitTag){-400 - tmdParsed->contents[1].cid, 0,"","",{}}; }
-
-    SysTitTag result = {};
-    switch (((u32*)content)[2]) {  // = *(file+0x8); we will hope these are uniquely keyed
-        case 0x000407B4:    result = (SysTitTag){257, 10, "WiiGator (WiiPower)", "", {}}; break;
-        case 0x0005F3B4:    result = (SysTitTag){257,  4, "WiiGator (GCBL 0.2)", "", {}}; break;
-        case 0x000545F4:    result = (SysTitTag){257,  4, "Waninkoko (rev5)",    "", {}}; break;
-        case 0x0018895C:    result = (SysTitTag){257,  0, "DIOS MIOS Lite v1.3", "", {}}; break;
-        case 0x0002C0D4:    result = (SysTitTag){257, 10, "official", "", {}}; break;
-        case 0x0002BF50:    result = (SysTitTag){257,  9, "official", "", {}}; break;
-        case 0x0002BDC8:    result = (SysTitTag){257,  8, "official", "", {}}; break;
-        case 0x0002B954:    result = (SysTitTag){257,  5, "official", "", {}}; break;
-        case 0x0002CB94:    result = (SysTitTag){257,  4, "official", "", {}}; break;
-        default: return (SysTitTag){-1, 0,"","",{}};
-    }
-    if (log) {printf(CON_CYAN("> identified by size: MIOS v%d %s\n"), result.rev, result.family);}
-    return result;
+    // not found
+    return (SysTitTag){0, titleIdLower, 0, "[unknown]", tmdHash};
 }

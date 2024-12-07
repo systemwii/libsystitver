@@ -10,21 +10,19 @@
 // the log parameters below enables printf logging (set up a console to read it)
 
 typedef struct {
+    s32 type;           // 0 (no match); 1 (tmd hash), 2 (cmd hash)
     s16 titleID;        // the title slot it's installed to (= IOS number) // negative on error
     u16 rev;            // title revision
-    char* family;       // ios family name ("original" for official titles)
-    char* version;      // cios version name
-    u8 tmdHash[20];     // sha1 hash of title metadata
+    char* name;         // ios name ("original" for official titles)
+    u8* hash;           // sha1 hash of title metadata
 } SysTitTag;
 
-int STV_LoadTitle(u32 titleIdLower, bool log);      // loads title #titleIdLower to memory
-int STV_VerifyCurrentTitle(bool log);               // verifies all content files match the hashes in the TMD
+int STV_LoadTitle(u32 titleIdLower, bool log);  // loads title #titleIdLower to memory
+int STV_VerifyCurrentTitle(bool log);           // verifies all content files match the hashes in the TMD
+SysTitTag STV_IdentifyCurrentTitle(bool log);   // identify title by hash of full TMD or TMD content block
+// you can add your own title identification heuristics, prefixed "SysTitTag STV_Identify"
 
-// title identification heuristics (you can add your own, prefixed "STV_Identify")
-SysTitTag STV_IdentifyCurrentTitleByHash(bool log); // identify title by hash of its TMD
-SysTitTag STV_IdentifyMIOSBySize(bool log);         // identify MIOS by second content file's size header
-
-int STV_VerifyShared1(u32 mask[4], bool log);       // verifies shared content files specified by bitmask mask
+int STV_VerifyShared1(u32 mask[4], bool log);   // verifies shared content files specified by bitmask mask
 // the mask comprises shared content file IDs (SIDs) as specified in content.map (maximum supported SID: 127)
 // so for example, to verify SIDs 5 and 57, do
 //     u32 mask[4] = {};

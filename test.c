@@ -43,13 +43,9 @@ void testTitle(int id, bool log) {
 	ret = STV_VerifyCurrentTitle(log);
 	if (ret != 0) {errStr = "(STV_VerifyCurrentTitle)"; fail(); return;}
 
-	SysTitTag stt = STV_IdentifyCurrentTitleByHash(log);
-	if (log && stt.titleID < 0) {printf("> not tmd matched (%d)\n", stt.titleID);}
+	SysTitTag stt = STV_IdentifyCurrentTitle(log);
+	if (log && stt.type == 0) {printf("> %s\n", stt.name);}
 
-	if (id == 257) {
-		stt = STV_IdentifyMIOSBySize(log);
-		if (log && stt.titleID < 0) {printf("> not size matched (%d)\n", stt.titleID);}
-	}
 	if (log) {sleep(1);}
 }
 
@@ -72,8 +68,8 @@ int main(int argc, char* argv[]) {
 	bool log = true;
 	timer();
 	// testCaching(log);			printf("cache test\n"); sleep(2);
-	testAllExceptSystemMenu(log);	printf("ioses done in %d\n", timer());
-	testTitle(2, log);				printf("system menu done in %d\n", timer());
+	testAllExceptSystemMenu(log);	printf("\nioses done in %d\n", timer());
+	testTitle(2, log);				printf("\nsystem menu done in %d\n", timer());
 	
 	sleep(15); return 0;
 }
@@ -100,7 +96,6 @@ int test1() {
 		usleep(500000);
 	}
 
-	free(titles);
     return 0;
 }
 */

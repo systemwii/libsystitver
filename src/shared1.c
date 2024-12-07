@@ -43,7 +43,7 @@ int STV_VerifyShared1(u32 mask[4], bool log) {
     static char filepath[48] = "/shared1/xxxxxxxx.app";
     u8 hashActual[20];
     shared1Content* s1map = (shared1Content*)shared1Map;
-    if (log) {printf("- shared cnt:");}
+    if (log) {printf("- shr cnt:");}
     for (int i=0; i<shared1MapSize/sizeof(shared1Content); i++) {
         int sid = parseHex(s1map[i].id);
         if (sid < 0x0 || sid >= 0x100) { return ERROR_CONTENTMAPCORRUPTED; }
