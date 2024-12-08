@@ -6,7 +6,7 @@
 // required reading: readme.md ("Wii System Title Verification In Brief")
 
 
-// == AVAILABLE SYMBOLS ==
+// == API ==
 // the log parameters below enables printf logging (set up a console to read it)
 
 typedef struct {
@@ -21,6 +21,7 @@ int STV_LoadTitle(u32 titleIdLower, bool log);  // loads title #titleIdLower to 
 int STV_VerifyCurrentTitle(bool log);           // verifies all content files match the hashes in the TMD
 SysTitTag STV_IdentifyCurrentTitle(bool log);   // identify title by hash of full TMD or TMD content block
 // you can add your own title identification heuristics, prefixed "SysTitTag STV_Identify"
+// discussion of their pros and cons is at identify.h
 
 int STV_VerifyShared1(u32 mask[4], bool log);   // verifies shared content files specified by bitmask mask
 // the mask comprises shared content file IDs (SIDs) as specified in content.map (maximum supported SID: 127)
@@ -33,10 +34,9 @@ int STV_VerifyShared1(u32 mask[4], bool log);   // verifies shared content files
 
 
 // == ERRORS ==
-// all "int" functions above return 0 for success or a stack of errors from various sources on failure
-// SysTitTag functions return SysTitTag.TitleID ≥0 on success or <0 on failure
-// see internal.h for a list of errors
-// functions returning a SysTitTag return null data on error
+// all "int" functions above return 0 for success or a stack of negative-number errors on failure
+// SysTitTag functions return SysTitTag.type ≥1 for a match or 0 for no match
+// see internal.h for a list of errors and their sources
 
 
 // == MANUALLY FREEING MEMORY ==

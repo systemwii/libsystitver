@@ -12,7 +12,7 @@ Each has a TMD (title metadata file), which lists its content files. The content
 
 So to verify the integrity of a title, we resolve each shared content file using this map, resolve unique content files by their ID, hash them all and compare to the TMD hashes, then finally hash the TMD and identify it (see [identify.h](src/identify.h) for the reference table). Now, you know enuff to understand what this library does 🤝.
 
-Looking up hashes of TMDs is one of several possible heuristics for identifying titles, which can be implemented as new `STV_Identify` functions here. Another that is implemented here is hashing the content metadata block of the TMD only (from offset 0x1e4 to end), which is useful for identifying custom IOSes/MIOSes whose content is the same but tend to have cosmetic differences in the rest of the TMD (such as revision number).
+Looking up hashes of TMDs is one of several possible heuristics for identifying titles, which can be implemented as new `STV_Identify` functions here. Another that is implemented here is hashing the content metadata block of the TMD only (from offset 0x1e4 to end), which can be useful for identifying custom IOSes/MIOSes whose content is the same but tend to have cosmetic differences in the rest of the TMD (such as revision number). This doesn't identify ones that have the same content files at different IDs or in different orders, tho; that could be added later.
 
 ### Usage
 
