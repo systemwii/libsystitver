@@ -32,8 +32,6 @@ void memFree(void** handle);
 int allocReadFile(char* filepath, u8** dataPtr);    // returns + filesize or - error
 int parseTmd(u64 tid, signed_blob** tmdPtr);        // returns + filesize or - error
 int parseHex(char s[8]);                            // returns parsed int (-1 on error)
-int loadShared1(void);                              // returns 0 or error
-int hashToSid(u8* hash);                            // returns 0 or error
 
 // text colours from monke
 #define CON_RED(str)		"\x1b[31;1m" str "\x1b[37;1m"

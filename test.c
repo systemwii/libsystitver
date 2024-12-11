@@ -39,12 +39,14 @@ void testCaching(bool log) {
 void testTitle(int id, bool log) {
 	ret = STV_LoadTitle(id, log);
 	if (ret != 0) {errStr = "(STV_LoadTitle)"; fail(); return;}
-	//if (id >= 10 && id <= 19) { STV_FreeShared1(); }
+	//if (id >= 10 && id <= 19) { STV_FreeContent(); }
 	//if (id == 41) { STV_FreeTitle(); }
 
 	ret = STV_VerifyCurrentTitle(log);
 	if (ret != 0) {errStr = "(STV_VerifyCurrentTitle)"; fail(); return;}
 	//if (id >= 50 && id <= 59) { STV_FreeTitle(); }
+	//tmd* tmdPtr = STV_GetCurrentTMD(); sleep(1);
+	//if (tmdPtr) { printf("%llx v%d\n", tmdPtr->title_id, tmdPtr->title_version); } else { printf("null\n"); }
 
 	SysTitTag stt = STV_IdentifyCurrentTitle(log);
 	if (log && stt.type == 0) {printf("> %s\n", stt.name);}

@@ -2,7 +2,7 @@
 #include "internal.h"
 #include "rtip.h"
 
-u8* content = NULL;                 // current content
+extern u8* content;     // current content
 
 // memory utilities
 // handle is a pointer (morally a reference) to a memory pointer

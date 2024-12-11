@@ -1,12 +1,14 @@
 #include "systitver.h"
 #include "internal.h"
 
-extern u8* content;
+static u8* content = NULL;          // last loaded content file contents
 static u8* shared1Map = NULL;       // retained shared content map
 static int shared1MapSize = -1;     // size of above
 
+// == shared content (internal) ==
+
 // load shared content map file to memory
-int loadShared1() {
+static inline int loadShared1() {
     shared1MapSize = allocReadFile("/shared1/content.map", &shared1Map);
     // shared1Map[58] = 'c'; // to test id/hash fail
 	// printf(" [content.map: (%d)]", shared1MapSize);
@@ -14,7 +16,7 @@ int loadShared1() {
 }
 
 // look up hash in shared content map, return shared content ID (u8) or -1 if not found
-int hashToSid(u8* hash) {
+static int hashToSid(u8* hash) {
     s32 ret = 0;
     if (shared1Map == NULL) { ret = loadShared1(); }
     if (ret < 0) { return ret; }
@@ -30,9 +32,7 @@ int hashToSid(u8* hash) {
     return -1;
 }
 
-void STV_FreeShared1() {
-    memFree((void**)&shared1Map);
-}
+// == shared content (api) ==
 
 int STV_VerifyShared1(u32 mask[4], bool log) {        
     s32 ret = 0;
@@ -67,4 +67,61 @@ int STV_VerifyShared1(u32 mask[4], bool log) {
     }
     if (log) {printf("\n");}
     return 0;
+}
+
+// == title (api) ==
+
+void STV_FreeContent() {
+    memFree((void**)&shared1Map);
+    memFree((void**)&content);
+}
+
+extern signed_blob* tmdRaw;
+extern tmd* tmdParsed;
+extern u32 titleIdLower;
+int STV_VerifyCurrentTitle(bool log) {
+    if (tmdRaw == NULL) { return ERROR_UNINITIALISED; }
+    int ret = 0;
+    static char filepath[48];
+    u32 shared1Mask[4] = {};
+    if (log) {printf("- unq cnt:");}
+
+    for (int i=0; i<tmdParsed->num_contents; i++) {
+        u32 cid = tmdParsed->contents[i].cid;
+        if (tmdParsed->contents[i].type == 0x8001) {    // shared content file
+            s32 sid = hashToSid(tmdParsed->contents[i].hash);
+            if (sid >= 0 && sid <= 127) {
+                shared1Mask[sid/32] |= 1 << (sid%32);
+            } else {
+                if (log) {
+                    printf(CON_MAGENTA("missing shared content:"));
+                    SHA1PRINTF(tmdParsed->contents[i].hash); printf("\n");
+                }
+                return ERROR_SHAREDCONTENTNOTFOUND;
+            }
+        } else {    // unique content file
+            snprintf(filepath, sizeof(filepath), "/title/00000001/%08x/content/%08x.app", titleIdLower, cid);
+            int filesize = allocReadFile(filepath, &content);
+            if (filesize == -106) {
+                if (log) {printf(CON_MAGENTA("missing unique content: %s\n"), filepath);}
+                return ERROR_UNIQUECONTENTNOTFOUND;
+            }
+            else if (filesize < 0) { return filesize; }
+            u8 hash[20];
+            SHA1(content, filesize, hash);
+            ret = memcmp(tmdParsed->contents[i].hash, hash, 20);
+            if (ret == 0) {
+                if (log) {printf(" <%d>", cid);}
+            } else {
+                return -400 - cid;
+            }
+        }
+    }
+    if (log) {printf("\n");}
+
+    ret = STV_VerifyShared1(shared1Mask, log);
+    if (ret == 0) {
+        if (log) {printf(CON_GREEN("- slot %3d passed verification\n"), titleIdLower);}
+    }
+    return ret;
 }
