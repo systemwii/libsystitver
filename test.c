@@ -20,30 +20,10 @@ int fail() {
 	sleep(5); return 0;
 }
 
-// test for caching shared1 verification results 
-void testCaching(bool log) {
-	u32 maskA[4] = {};
-	maskA[23/32] |= 1 << (23%32);
-	maskA[26/32] |= 1 << (26%32);
-	ret = STV_VerifyShared1(maskA, true);
-	if (ret != 0) { errStr = "(STV_Shared1)"; fail(); return; }
-
-	u32 maskB[4] = {};
-	maskB[23/32] |= 1 << (23%32);
-	maskB[40/32] |= 1 << (40%32);
-	ret = STV_VerifyShared1(maskB, true);
-	if (ret != 0) { errStr = "(STV_Shared1)"; fail(); return; }
-	return;
-}
-
 void testTitle(int id, bool log) {
-	ret = STV_LoadTitle(id, log);
+	ret = STV_LoadTitle(id, false);
 	if (ret != 0) {errStr = "(STV_LoadTitle)"; fail(); return;}
-	//if (id >= 10 && id <= 19) { STV_FreeContent(); }
-	//if (id == 41) { STV_FreeTitle(); }
 
-	ret = STV_VerifyCurrentTitle(log);
-	if (ret != 0) {errStr = "(STV_VerifyCurrentTitle)"; fail(); return;}
 	//if (id >= 50 && id <= 59) { STV_FreeTitle(); }
 	tmd* tmdPtr = STV_GetCurrentTMD();
 	if (log && tmdPtr) {

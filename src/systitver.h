@@ -22,16 +22,6 @@ SysTitTag STV_IdentifyCurrentTitle(bool log);   // identify title by hash of ful
 // you can add your own title identification heuristics, prefixed "SysTitTag STV_Identify"
 // discussion of their pros and cons is at identify.h
 
-int STV_VerifyCurrentTitle(bool log);           // verifies all content files match the hashes in the TMD
-int STV_VerifyShared1(u32 mask[4], bool log);   // verifies shared content files specified by bitmask mask
-// the mask comprises shared content file IDs (SIDs) as specified in content.map (maximum supported SID: 127)
-// so for example, to verify SIDs 5 and 57, do
-//     u32 mask[4] = {};
-//     mask[ 5/32] |= 1 << ( 5%32);
-//     mask[57/32] |= 1 << (57%32);
-//     STV_VerifyShared1(mask, true);
-// note that these are incrementally verified, so calling this function twice on an SID won't reverify it
-
 
 // == ERRORS ==
 // all "int" functions above return 0 for success or a stack of negative-number errors on failure
@@ -46,6 +36,5 @@ int STV_VerifyShared1(u32 mask[4], bool log);   // verifies shared content files
 // loading a new one frees the previous one, so users needn't worry about memory
 // nonetheless, to free this memory completely, you can call these functions:
 void STV_FreeTitle(void);       // frees TMD
-void STV_FreeContent(void);     // frees content file and shared content map
 
 #pragma GCC visibility pop

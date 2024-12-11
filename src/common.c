@@ -1,6 +1,5 @@
 #include <malloc.h>
 #include "internal.h"
-#include "rtip.h"
 
 extern u8* content;     // current content
 
@@ -30,47 +29,4 @@ int parseTmd(u64 tid, signed_blob** handle) {
         } else {ret = ERROR_OUTOFMEMORY;}
     }
     return ret;
-}
-
-// read file to heap, set address at *handle, return size or error
-// for use with reusable static pointers; frees them before setting them again
-// returns filesize (on success), ISFS errors (https://www.wiibrew.org/wiki//dev/fs) or own ERROR_OUTOFMEMORY
-int allocReadFile(char* filepath, u8** handle) {
-    s32 ret = 0;
-    s32 fd = ISFS_Open(filepath, ISFS_OPEN_READ);
-    if (fd == -101 || fd == -102) {     // just-in-time ISFS init + IOS patch
-        ret = ISFS_Initialize();        // resolves error -101 (uninit)
-        if (ret < 0) {return ret;}
-        ret = IosPatch_RUNTIME(PATCH_WII, PATCH_ISFS_PERMISSIONS, false);   // resolves error -102 (unauth)
-        if (ret < 0) {return ret;}
-        fd = ISFS_Open(filepath, ISFS_OPEN_READ);
-    }
-    if (fd > 0) {
-        static fstats filestat ATTRIBUTE_ALIGN(32);
-        ret = ISFS_GetFileStats(fd, &filestat);
-        if (ret == 0) {
-            memReallocAlign((void**)handle, filestat.file_length);
-            // printf("  [realloc for %s: %p (%x)]\n", filepath, *handle, filestat.file_length);
-            if (*handle != NULL) {
-                ret = ISFS_Read(fd, *handle, filestat.file_length);    // returns filesize
-                if (ret < 0) {memFree((void**)handle);}
-            } else {ret = ERROR_OUTOFMEMORY;}
-        }
-        ISFS_Close(fd);
-    } else {ret = fd;}
-    return ret;
-}
-
-// convert lowercase hex string to integer, -1 if invalid (or 0xffffffff)
-int parseHex(char s[8]) {
-    int result = 0;
-    for (int i=0; i<8; i++) {
-        char c = s[7-i];
-        int val = 0;
-        if      (c >= '0' && c <= '9') { val = c - '0';      }
-        else if (c >= 'a' && c <= 'f') { val = c - 'a' + 10; }
-        else    { return -1; }
-        result += val * (1 << (i*4));
-    }
-    return result;
 }
