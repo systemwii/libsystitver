@@ -1,6 +1,5 @@
 #pragma once
 #pragma GCC visibility push(default)
-
 #include <gccore.h>
 
 // required reading: readme.md ("Wii System Title Verification In Brief")
@@ -17,10 +16,8 @@ typedef struct {
     u8* hash;           // sha1 hash of title metadata
 } SysTitTag;
 
-// provides access to currently loaded title's TMD
-tmd* const STV_GetCurrentTMD(void);
-
 int STV_LoadTitle(u32 titleIdLower, bool log);  // loads title #titleIdLower to memory
+tmd* const STV_GetCurrentTMD(void);             // provides access to currently-loaded title's TMD (w/o signature)
 SysTitTag STV_IdentifyCurrentTitle(bool log);   // identify title by hash of full TMD or TMD content block
 // you can add your own title identification heuristics, prefixed "SysTitTag STV_Identify"
 // discussion of their pros and cons is at identify.h

@@ -22,6 +22,11 @@ See src/systitver.h.
 
 This library is designed to be included in a Git repository and compiled alongside the rest of the program. It works out-of-the-box with the [systemwii Make setup](https://github.com/systemwii/make) but can also be adapted to other build setups.
 
+A few branches are provided for user flexibility:
+- **main**: the full library, with title identification and integrity checks;
+- **id-only**: title-identification-only library (no librtip dependency);
+- **data-only**: just the table of hashes, for use as source code.
+
 1. Add it as a submodule:
 ```bash
 git submodule add https://github.com/systemwii/libsystitver.git lib/systitver

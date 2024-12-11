@@ -45,8 +45,10 @@ void testTitle(int id, bool log) {
 	ret = STV_VerifyCurrentTitle(log);
 	if (ret != 0) {errStr = "(STV_VerifyCurrentTitle)"; fail(); return;}
 	//if (id >= 50 && id <= 59) { STV_FreeTitle(); }
-	//tmd* tmdPtr = STV_GetCurrentTMD(); sleep(1);
-	//if (tmdPtr) { printf("%llx v%d\n", tmdPtr->title_id, tmdPtr->title_version); } else { printf("null\n"); }
+	tmd* tmdPtr = STV_GetCurrentTMD();
+	if (log && tmdPtr) {
+		printf(CON_BLUE("%3d v%5d "), (u32)(tmdPtr->title_id & 0xffffffff), tmdPtr->title_version);
+	} else { printf(CON_BLUE("null ")); }
 
 	SysTitTag stt = STV_IdentifyCurrentTitle(log);
 	if (log && stt.type == 0) {printf("> %s\n", stt.name);}
@@ -67,11 +69,10 @@ void testAllExceptSystemMenu(bool log) {
 
 
 int main(int argc, char* argv[]) {
-	consoleInit();
+	consoleInit(); timer();
 
 	printf("henlo\n\n");
-	bool log = true;
-	timer();
+	bool log = true; timer();
 
 	// testCaching(log);			printf("cache test\n"); sleep(2);
 	testAllExceptSystemMenu(log);	printf("\nioses done in %d\n", timer());
