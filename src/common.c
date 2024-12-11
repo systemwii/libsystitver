@@ -3,7 +3,6 @@
 #include "rtip.h"
 
 u8* content = NULL;                 // current content
-static bool nandAccess = false;     // caches whether nand access has been patched into runtime
 
 // memory utilities
 // handle is a pointer (morally a reference) to a memory pointer
@@ -15,25 +14,19 @@ void memFree(void** handle) {
     free(*handle); *handle = NULL;
 }
 
-// patch IOS for nand access and initialise file system
-int initNand() {
-    s32 ret = IosPatch_RUNTIME(PATCH_WII, PATCH_ISFS_PERMISSIONS, false);
-    if (ret < 0) {return ret;}
-    ret = ISFS_Initialize();
-    if (ret < 0) {return ret;}
-    nandAccess = true;
-    return 0;
-}
-
 // read file to heap, set address at *handle, return size or error
 // for use with reusable static pointers; frees them before setting them again
 // returns filesize (on success), ISFS errors (https://www.wiibrew.org/wiki//dev/fs) or own ERROR_OUTOFMEMORY
 int allocReadFile(char* filepath, u8** handle) {
     s32 ret = 0;
-    if (!nandAccess) {ret = initNand();}
-    if (ret != 0) {return ret;}
-
     s32 fd = ISFS_Open(filepath, ISFS_OPEN_READ);
+    if (fd == -101 || fd == -102) {     // just-in-time ISFS init + IOS patch
+        ret = ISFS_Initialize();        // resolves error -101 (uninit)
+        if (ret < 0) {return ret;}
+        ret = IosPatch_RUNTIME(PATCH_WII, PATCH_ISFS_PERMISSIONS, false);   // resolves error -102 (unauth)
+        if (ret < 0) {return ret;}
+        fd = ISFS_Open(filepath, ISFS_OPEN_READ);
+    }
     if (fd > 0) {
         static fstats filestat ATTRIBUTE_ALIGN(32);
         ret = ISFS_GetFileStats(fd, &filestat);
@@ -51,13 +44,10 @@ int allocReadFile(char* filepath, u8** handle) {
 }
 
 // returns filesize (on success), ES errors (https://www.wiibrew.org/wiki//dev/es) or own ERROR_OUTOFMEMORY
+// does not require patched IOS or ISFS_Initialize
 int parseTmd(u64 tid, signed_blob** handle) {
-    s32 ret = 0;
-    if (!nandAccess) {ret = initNand();}
-    if (ret != 0) {return ret;}
-
     u32 tmdSize = 0;
-    ret = ES_GetStoredTMDSize(tid, &tmdSize);
+    s32 ret = ES_GetStoredTMDSize(tid, &tmdSize);
     if (ret == 0) {
         memReallocAlign((void**)handle, tmdSize);
         // printf("  [realloc for tid %016llx: %p (%x)]\n", tid, *handle, tmdSize);

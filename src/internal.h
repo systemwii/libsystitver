@@ -29,7 +29,6 @@ typedef struct { char id[8]; u8 hash[20]; } __attribute__((packed)) shared1Conte
 
 // documentation in source files
 void memFree(void** handle);
-int initNand(void);                                 // returns 0 or error
 int allocReadFile(char* filepath, u8** dataPtr);    // returns + filesize or - error
 int parseTmd(u64 tid, signed_blob** tmdPtr);        // returns + filesize or - error
 int parseHex(char s[8]);                            // returns parsed int (-1 on error)
