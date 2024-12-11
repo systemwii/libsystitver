@@ -1,4 +1,12 @@
 // lookup tables of SHA1 hashes of known TMDs
+#include <gccore.h>
+typedef struct {
+    s32 type;           // 0 (no match); 1 (tmd hash), 2 (cmd hash)
+    s16 titleID;        // the title slot it's installed to (= IOS number) // negative on error
+    u16 rev;            // title revision
+    char* name;         // ios name ("original" for official titles)
+    u8* hash;           // sha1 hash of title metadata
+} SysTitTag;
 
 // hashes of full TMDs, best used for verifying official titles
 // todo: add missing stubs + KIOS + old revisions (from NUS or elsewhere)
