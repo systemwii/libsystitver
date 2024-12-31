@@ -8,10 +8,29 @@ extern u8* content;     // current content
 // handle is a pointer (morally a reference) to a memory pointer
 // *handle is assumed to equal (1) a pointer to allocated memory or (2) NULL
 static inline void memReallocAlign(void** handle, size_t size) {
-    free(*handle); *handle = memalign(32, (size+31)&(~31)); // (size+31)&(~31) rounds size up to multiple of 32
+    free(*handle); *handle = memalign(64, (size+63)&(~63)); // (size+63)&(~63) rounds size up to multiple of 64
 }
 void memFree(void** handle) {
     free(*handle); *handle = NULL;
+}
+
+// libogc wrappers (handling JIT IOS IPC opening)
+int iosSha(u8* data, u32 size, u8* output) {
+    s32 ret = SHA_Init();
+    if (ret < -1) {return ret;} // SHA_Init erroneously returns -1 if already init
+    return SHA_Calculate((void*)data, size, (void*)output);
+}
+static s32 iosFsOpen(char* filepath, u8 mode) {
+    s32 ret = ISFS_Initialize();
+    if (ret < 0) {return ret;}
+    ret = ISFS_Open(filepath, ISFS_OPEN_READ);
+    if (ret == -102) {
+        ret = IosPatch_RUNTIME(PATCH_WII, PATCH_ISFS_PERMISSIONS, false);
+        if (ret < 0) {return ret;}
+        usleep(600000); // avoids undiagnosed race condition between IOS patch and execute; usual delay is 4–5ds
+        ret = ISFS_Open(filepath, ISFS_OPEN_READ);
+    }
+    return ret;
 }
 
 // returns filesize (on success), ES errors (https://www.wiibrew.org/wiki//dev/es) or own ERROR_OUTOFMEMORY
@@ -37,14 +56,7 @@ int parseTmd(u64 tid, signed_blob** handle) {
 // returns filesize (on success), ISFS errors (https://www.wiibrew.org/wiki//dev/fs) or own ERROR_OUTOFMEMORY
 int allocReadFile(char* filepath, u8** handle) {
     s32 ret = 0;
-    s32 fd = ISFS_Open(filepath, ISFS_OPEN_READ);
-    if (fd == -101 || fd == -102) {     // just-in-time ISFS init + IOS patch
-        ret = ISFS_Initialize();        // resolves error -101 (uninit)
-        if (ret < 0) {return ret;}
-        ret = IosPatch_RUNTIME(PATCH_WII, PATCH_ISFS_PERMISSIONS, false);   // resolves error -102 (unauth)
-        if (ret < 0) {return ret;}
-        fd = ISFS_Open(filepath, ISFS_OPEN_READ);
-    }
+    s32 fd = iosFsOpen(filepath, ISFS_OPEN_READ);
     if (fd > 0) {
         static fstats filestat ATTRIBUTE_ALIGN(32);
         ret = ISFS_GetFileStats(fd, &filestat);

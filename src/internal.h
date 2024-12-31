@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <gccore.h>
-#include "sha1.h"
 
 // native errors
 #define ERROR_UNINITIALISED         -31     // called STV_VerifyCurrentTitle with no title loaded
@@ -29,6 +28,7 @@ typedef struct { char id[8]; u8 hash[20]; } __attribute__((packed)) shared1Conte
 
 // documentation in source files
 void memFree(void** handle);
+int iosSha(u8* data, u32 size, u8* output);
 int parseTmd(u64 tid, signed_blob** tmdPtr);        // returns + filesize or - error
 int allocReadFile(char* filepath, u8** dataPtr);    // returns + filesize or - error
 int parseHex(char s[8]);                            // returns parsed int (-1 on error)

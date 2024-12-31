@@ -41,7 +41,7 @@ int STV_VerifyShared1(u32 mask[4], bool log) {
     
     static u32 shared1verified[4];  // caches already-verified shared content IDs
     static char filepath[48] = "/shared1/xxxxxxxx.app";
-    u8 hashActual[20];
+    static u8 hashActual[20] ATTRIBUTE_ALIGN(64);
     shared1Content* s1map = (shared1Content*)shared1Map;
     if (log) {printf("- shr cnt:");}
     for (int i=0; i<shared1MapSize/sizeof(shared1Content); i++) {
@@ -57,7 +57,8 @@ int STV_VerifyShared1(u32 mask[4], bool log) {
         int filesize = allocReadFile(filepath, &content);
         if (filesize < 0) { return filesize; }
 
-        SHA1(content, filesize, hashActual);
+        ret = iosSha(content, filesize, hashActual);
+        if (ret < 0) {return ret;}
         if (memcmp(s1map[i].hash, hashActual, 20) == 0) {
             shared1verified[sid/32] |= 1 << (sid%32);
             if (log) {printf(" (%d)", sid);}
@@ -107,8 +108,9 @@ int STV_VerifyCurrentTitle(bool log) {
                 return ERROR_UNIQUECONTENTNOTFOUND;
             }
             else if (filesize < 0) { return filesize; }
-            u8 hash[20];
-            SHA1(content, filesize, hash);
+            static u8 hash[20] ATTRIBUTE_ALIGN(64);
+            ret = iosSha(content, filesize, hash);
+            if (ret < 0) {return ret;}
             ret = memcmp(tmdParsed->contents[i].hash, hash, 20);
             if (ret == 0) {
                 if (log) {printf(" <%d>", cid);}

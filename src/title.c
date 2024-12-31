@@ -5,8 +5,8 @@
 signed_blob* tmdRaw = NULL;         // currently loaded title TMD (full signed blob)
 tmd* tmdParsed = NULL;              // TMD object pointer within above data (= above+0x140)
 u32 titleIdLower = 0;               // ID of last loaded title
-static u8 tmdHash[20];              // hash of last loaded TMD
-static u8 cmdHash[20];              // hash of last loaded TMD's concatenated content metadata
+static u8 tmdHash[20] ATTRIBUTE_ALIGN(64);  // hash of last loaded TMD
+static u8 cmdHash[20] ATTRIBUTE_ALIGN(64);  // hash of last loaded TMD's concatenated content metadata
 
 tmd* const STV_GetCurrentTMD() {
     return tmdParsed;
@@ -28,8 +28,10 @@ int STV_LoadTitle(u32 title, bool log) {
     }
     titleIdLower = title;
     s32 contentCount = tmdParsed->num_contents;
-    SHA1((u8*)tmdRaw, filesize, tmdHash);
-    SHA1((u8*)(tmdParsed->contents), contentCount*sizeof(tmd_content), cmdHash);
+    s32 ret = iosSha((u8*)tmdRaw, filesize, tmdHash);
+    if (ret < 0) {return ret;}
+    ret = iosSha((u8*)(tmdParsed->contents), contentCount*sizeof(tmd_content), cmdHash);
+    if (ret < 0) {return ret;}
 	if (log) {
         printf(CON_YELLOW("\nslot %3d | #%2d |"), titleIdLower, contentCount);
         SHA1PRINTF(tmdHash); printf("\n");
