@@ -8,7 +8,7 @@ BUILD		:=	_
 CACHE		:=	_/cache
 
 # --- sources ---
-SRCS		 =	src lib/monke/sha1
+SRCS		 =	src
 SRCEXTS		 =	.c
 BINS		 =  
 BINEXTS		 =  
@@ -16,6 +16,7 @@ LIBS		 =
 LIBDIRSBNDLE =	$(wildcard lib/*/_)
 LIBDIRSLOOSE =	
 INCLUDES	 =	
+LIBOGC		 =	$(DEVKITPRO)/libogc
 
 # --- flags ---
 CFLAGS		 =	-save-temps -g -O2 -Wall -Wno-unused-variable

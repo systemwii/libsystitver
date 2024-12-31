@@ -7,10 +7,17 @@ extern u8* content;     // current content
 // handle is a pointer (morally a reference) to a memory pointer
 // *handle is assumed to equal (1) a pointer to allocated memory or (2) NULL
 static inline void memReallocAlign(void** handle, size_t size) {
-    free(*handle); *handle = memalign(32, (size+31)&(~31)); // (size+31)&(~31) rounds size up to multiple of 32
+    free(*handle); *handle = memalign(64, (size+63)&(~63)); // (size+63)&(~63) rounds size up to multiple of 64
 }
 void memFree(void** handle) {
     free(*handle); *handle = NULL;
+}
+
+// libogc wrappers (handling JIT IOS IPC opening)
+int iosSha(u8* data, u32 size, u8* output) {
+    s32 ret = SHA_Init();
+    if (ret < -1) {return ret;} // SHA_Init erroneously returns -1 if already init
+    return SHA_Calculate((void*)data, size, (void*)output);
 }
 
 // returns filesize (on success), ES errors (https://www.wiibrew.org/wiki//dev/es) or own ERROR_OUTOFMEMORY

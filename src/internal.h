@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <gccore.h>
-#include "sha1.h"
 
 // native errors
 #define ERROR_UNINITIALISED         -31     // called STV_VerifyCurrentTitle with no title loaded
@@ -22,6 +21,7 @@
 
 // documentation in source files
 void memFree(void** handle);
+int iosSha(u8* data, u32 size, u8* output);
 int parseTmd(u64 tid, signed_blob** tmdPtr);        // returns + filesize or - error
 
 // text colours from monke
